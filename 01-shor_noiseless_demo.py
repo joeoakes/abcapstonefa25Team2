@@ -140,6 +140,7 @@ if __name__ == "__main__":
   visualize_partial_circuit(qc, num_ops=50)
 
 # === (Thomas) Graphs Comparing Noise (Baseline)===
+#comments for every line since i will be absent and someone will have to explain code...
 import matplotlib.pyplot as plt
 import io, contextlib  
 
