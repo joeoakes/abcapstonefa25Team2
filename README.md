@@ -55,7 +55,7 @@ pip install --upgrade qiskit
  
 ## Professor
 
-* Joa Oakes - CMPSC 488/IST 440W FW25
+* Joe Oakes - CMPSC 488/IST 440W FW25
 
 ## Team 2 Members
 
