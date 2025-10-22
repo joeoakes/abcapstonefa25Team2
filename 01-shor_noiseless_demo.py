@@ -149,7 +149,7 @@ if __name__ == "__main__": #only runs if above is running right
     buf = io.StringIO()
 
     with contextlib.redirect_stdout(buf): #makes sure things (like “Candidate period r = …”) doesnt showup
-        counts = shor_factor_demo(a=a, N=15, t=8, shots=12) ##Run the Shor algorithm demo for given parameters (a=7, N=15, t=8) with 12 shots
+        counts = shor_factor_demo(a=a, N=15, t=8, shots=1024) ##Run the Shor algorithm demo for given parameters (a=7, N=15, t=8) with 1024 shots
          #Returns a dictionary of measurement outcomes (bitstrings) and how often they occurred
 
     if counts:  #only plot if valid data
