@@ -13,17 +13,18 @@
 !pip install pylatexenc
 
 import math
-import pylatexenc
 from fractions import Fraction
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import Aer
 
 def cswap_decomp(qc, c, a, b):
+    # Controlled swap between qubits a and b if control qubit c = 1
     qc.ccx(a, c, b)
     qc.ccx(b, c, a)
     qc.ccx(a, c, b)
 
 def iqft_in_place(qc, qubits):
+    # Inverse Quantum Fourier Transform on given qubits
     n = len(qubits)
     for j in range(n//2):
         qc.swap(qubits[j], qubits[n-1-j])
@@ -33,6 +34,7 @@ def iqft_in_place(qc, qubits):
         qc.h(qubits[j])
 
 def apply_controlled_mul_a_mod_15(qc, ctrl, work, a, power):
+    # Controlled modular multiplication by 'a' mod 15
     for _ in range(power):
         if a in [2, 13]:
             cswap_decomp(qc, ctrl, work[2], work[3])
@@ -46,17 +48,23 @@ def apply_controlled_mul_a_mod_15(qc, ctrl, work, a, power):
             cswap_decomp(qc, ctrl, work[1], work[3])
             cswap_decomp(qc, ctrl, work[0], work[2])
         if a in [7, 11, 13]:
-            qc.cx(ctrl, work[0]); qc.cx(ctrl, work[1]); qc.cx(ctrl, work[2]); qc.cx(ctrl, work[3])
+            qc.cx(ctrl, work[0])
+            qc.cx(ctrl, work[1])
+            qc.cx(ctrl, work[2])
+            qc.cx(ctrl, work[3])
 
 def controlled_U(qc, controls, work, a):
+    # Apply controlled powers of U (a^2^k mod 15)
     for k, ctrl in enumerate(controls):
         apply_controlled_mul_a_mod_15(qc, ctrl, work, a, 2**k)
 
 def continued_fraction_phase_estimate(meas_value, t):
+    # Convert measurement to fraction for period estimation
     phase = meas_value / (2 ** t)
     return Fraction(phase).limit_denominator(2 ** t)
 
 def try_order_from_measure(meas, t, a, N):
+    # Try to find the order r from the measurement result
     frac = continued_fraction_phase_estimate(meas, t)
     if frac.denominator == 0:
         return None
@@ -69,6 +77,7 @@ def try_order_from_measure(meas, t, a, N):
     return None
 
 def try_factors_from_r(a, r, N):
+    # Try to compute non-trivial factors using r
     if r is None or r % 2 == 1:
         return None
     x = pow(a, r // 2, N)
@@ -81,20 +90,23 @@ def try_factors_from_r(a, r, N):
     return None
 
 def build_shor_circuit(a, N=15, t=8):
+    # Build Shor's order-finding circuit
     counting = t
     work = 4
     qc = QuantumCircuit(counting + work, counting)
-    qc.x(counting)
+    qc.x(counting)  # set work register to |1>
     for i in range(counting):
-        qc.h(i)
+        qc.h(i)  # put counting qubits in superposition
     controlled_U(qc, range(counting), list(range(counting, counting + work)), a)
-    iqft_in_place(qc, list(range(counting)))
+    iqft_in_place(qc, list(range(counting)))  # apply inverse QFT
     qc.measure(range(counting), range(counting))
     return qc
 
 def shor_factor_demo(a, N=15, t=8, shots=12):
+    # Run simulation and extract factors
     if math.gcd(a, N) != 1:
-        print(f"gcd({a},{N}) != 1:", math.gcd(a, N)); return
+        print(f"gcd({a},{N}) != 1:", math.gcd(a, N))
+        return
     qc = build_shor_circuit(a, N, t)
     sim = Aer.get_backend("qasm_simulator")
     qc_t = transpile(qc, backend=sim, optimization_level=1)
