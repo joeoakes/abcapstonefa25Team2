@@ -1,3 +1,12 @@
+# Project:
+# Purpose Details:
+# Course: CMPSC 488/IST440W
+# Author: Team Yoda
+# Date Developed: 10/21/25
+# Last Date Changed: 10/22/25
+# Revision:
+
+ 
 !pip install qiskit
 !pip install qiskit qiskit-aer
 !pip install matplotlib
