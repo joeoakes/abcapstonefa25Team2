@@ -4,6 +4,7 @@ This project, developed by Team 2 (Team Yoda) explores how quantum computing can
 
 ## Project Structure (WIP)
 
+```
 /abcapstonefa25Team2
 │
 ├── shor_noiseless_demo.py # Serves as the control for the simulation
@@ -11,6 +12,7 @@ This project, developed by Team 2 (Team Yoda) explores how quantum computing can
 │ ├── results.csv
 │ └── plots/
 └── README.md # Project documentation
+```
 
 ## Setup
 
