@@ -1,6 +1,7 @@
 # Breaking Crypto with Quantum Simulation - Team 2
 
 This project, developed by Team 2 (Team Yoda) explores how quantum computing can challenege classical encryption by simulationg **Shor's Algorithm** - a quantum method for factoring the large intergers commonly using in RSA encryption. 
+
 Using both Python and Qiskit, our team has developed a simulator that **performs quantum factoring** on smaller RSA problems, measures the **error and noise effects** and success probability with each run, and has been **optimized** after each run.
 
 ## Project Structure (WIP)
