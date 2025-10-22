@@ -1,4 +1,4 @@
-# Project:
+# Project: Breaking Crypto with Quantum Simulation
 # Purpose Details:
 # Course: CMPSC 488/IST440W
 # Author: Team Yoda
