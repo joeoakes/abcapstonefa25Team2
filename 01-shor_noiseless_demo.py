@@ -138,3 +138,38 @@ if __name__ == "__main__":
   
   # matplotlib circuit diagram
   visualize_partial_circuit(qc, num_ops=50)
+
+# === (tom) Graphs Comparing Noise (Baseline)===
+import matplotlib.pyplot as plt
+import io, contextlib  
+
+if __name__ == "__main__":
+    a = 7
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf): 
+        counts = shor_factor_demo(a=a, N=15, t=8, shots=12) 
+
+    if counts:  # only plot if valid data
+        total_shots = sum(counts.values())
+        probabilities = {state: count / total_shots for state, count in counts.items()}
+
+        N_show = 10
+        top_probs = dict(sorted(probabilities.items(), key=lambda x: x[1], reverse=True)[:N_show])
+
+        plt.figure(figsize=(6,4))
+        bars = plt.bar(top_probs.keys(), top_probs.values(), color='royalblue')
+        plt.title(f"Top Measurement Outcomes for a={a} (No Noise)")
+        plt.xlabel("Measured Bitstring")
+        plt.ylabel("Probability")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+
+        for bar, val in zip(bars, top_probs.values()):
+            plt.text(
+                bar.get_x() + bar.get_width()/2,
+                bar.get_height() + 0.01,
+                f"{val*100:.1f}%",
+                ha='center', va='bottom', fontsize=10
+            )
+
+        plt.show()
