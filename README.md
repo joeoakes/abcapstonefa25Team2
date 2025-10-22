@@ -4,12 +4,14 @@ This project, developed by Team 2 (Team Yoda) explores how quantum computing can
 
 Using both Python and Qiskit, our team has developed a simulator that **performs quantum factoring** on smaller RSA problems, measures the **error and noise effects** and success probability with each run, and has been **optimized** after each run.
 
-## Project Structure (WIP)
+## Project Structure
 
 ```
 /abcapstonefa25Team2
 │
-├── shor_noiseless_demo.py # Serves as the control for the simulation
+├── 01-shor_noiseless_demo.py # Serves as the control for the simulation
+├── 02-shor_with_noise_demo.py # Simulates with noise functions added
+├── 03-resource_analysis.py # Estimates qubits, gates, runtime, and energy
 ├── /data # Stores output metrics and figures
 │ ├── results.csv
 │ └── plots/
@@ -23,18 +25,18 @@ Using both Python and Qiskit, our team has developed a simulator that **performs
 * Python 3.9 or higher  
 * Required libraries:
 ```
-pip install qiskit matplotlib numpy
+pip install qiskit matplotlib numpy pylatexenc
 ```
 
-### Executing program (WIP)
+### Executing program
 
 * Clone or download this repository  
 * Navigate to the project folder  
 * Run the demo programs using the following commands
 ```
-git clone ---
+git clone https://github.com/joeoakes/abcapstonefa25Team2
 cd abcapstonefa25Team2
----
+python 01-shor_noiseless_demo.py
 ```
 
 ## Help
