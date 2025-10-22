@@ -1,60 +1,70 @@
-# Breaking Crypto with Quantum Simulation - Team Yoda
+# Breaking Crypto with Quantum Simulation - Team 2
 
-Simple overview of use/purpose.
+This project, developed by Team 2 (Team Yoda) explores how quantum computing can challenege classical encryption by simulationg **Shor's Algorithm** - a quantum method for factoring the large intergers commonly using in RSA encryption. Using both Python and Qiskit, our team has developed a simulator that **performs quantum factoring** on smaller RSA problems, measures the **error and noise effects** and success probability with each run, and has been **optimized** after each run.
 
-## Description
+## Project Structure (WIP)
 
-An in-depth paragraph about your project and overview of use.
+/abcapstonefa25Team2
+│
+├── shor_noiseless_demo.py # Serves as the control for the simulation
+├── /data # Stores output metrics and figures
+│ ├── results.csv
+│ └── plots/
+└── README.md # Project documentation
 
-## Getting Started
+## Setup
 
 ### Dependencies
 
-* Describe any prerequisites, libraries, OS version, etc., needed before installing program.
-* ex. Windows 10
-
-### Installing
-
-* How/where to download your program
-* Any modifications needed to be made to files/folders
-
-### Executing program
-
-* How to run the program
-* Step-by-step bullets
+* Python 3.9 or higher  
+* Required libraries:
 ```
-code blocks for commands
+pip install qiskit matplotlib numpy
+```
+
+### Executing program (WIP)
+
+* Clone or download this repository  
+* Navigate to the project folder  
+* Run the demo programs using the following commands
+```
+git clone ---
+cd abcapstonefa25Team2
+---
 ```
 
 ## Help
 
-Any advise for common problems or issues.
+* If Qiskit backend errors occur:
 ```
-command to run if program contains helper info
+pip install --upgrade qiskit
 ```
-
-## Authors
-
-Contributors names and contact info
-
-ex. Jonathan Cunningham
-ex. Haroun Ramadan
-ex. Marco Isabella
-ex. Marco Ramirez
-ex. Tao Geng
-ex. Thomas McConnell
-ex. Vasu Patel
+* If simulation is slow:
+  * Reduce the number of qubits or test a smaller integer (e.g., N = 15)  
+  * Disable noise models or reduce shots (`shots=512`)  
+  * Run only the core factoring circuit for validation
 
 ## Version History
 
 * 0.1
     * Initial Release
+ 
+## Professor
 
-## License
+* Joa Oakes - CMPSC 488/IST 440W FW25
 
-This project is licensed under the [NAME HERE] License - see the LICENSE.md file for details
+## Team 2 Members
 
-## Acknowledgments
+* **Jonathan Cunningham** - Project Lead & Coordinator  
+* **Haroun Ramadan** - Ethics Verification & Testing Lead  
+* **Marco Isabella** - Circuit Optimization Engineer  
+* **Marco Ramirez** - Noise & Error Modeling  
+* **Tao Geng** - Quantum Algorithm Specialist  
+* **Thomas McConnell** - Data Visualization & Report Designer  
+* **Vasu Patel** - Resource Estimation Analyst  
 
-Inspiration, code snippets, etc.
-* [awesome-readme](https://github.com/matiassingers/awesome-readme)
+## References
+
+* Qiskit Documentation – [https://docs.quantum.ibm.com](https://docs.quantum.ibm.com)
+
+
