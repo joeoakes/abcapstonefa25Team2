@@ -1,12 +1,9 @@
 # Project: Breaking Crypto with Quantum Simulation
-# Purpose Details:
 # Course: CMPSC 488/IST440W
-# Author: Team Yoda
+# Author: Team 2 (Yoda)
 # Date Developed: 10/21/25
-# Last Date Changed: 10/22/25
-# Revision:
+# Last Date Changed: 10/23/25
 
- 
 !pip install qiskit
 !pip install qiskit qiskit-aer
 !pip install matplotlib
@@ -17,6 +14,16 @@ from fractions import Fraction
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import Aer
 
+import pylatexenc
+
+import csv, time
+from qiskit_aer import Aer
+from qiskit import transpile
+
+import matplotlib.pyplot as plt
+import io, contextlib
+
+# === PART 1 (Martin) --- Shor's Algorithm ===
 def cswap_decomp(qc, c, a, b):
     # Controlled swap between qubits a and b if control qubit c = 1
     qc.ccx(a, c, b)
@@ -128,8 +135,7 @@ def shor_factor_demo(a, N=15, t=8, shots=12):
     print("No non-trivial factors found.")
 
 # === PART 2 (Marco) --- Visualizing Ciruits ===
-
-# function to visualize prefix of circuit with matplotlib (can change num_ops for more/less circuits)
+# Function to visualize prefix of circuit with matplotlib (can change num_ops for more/less circuits)
 def visualize_partial_circuit(qc, num_ops=50):
   partial = QuantumCircuit(qc.num_qubits, qc.num_clbits)
   for instr, qargs, cargs in qc.data[:num_ops]:
@@ -138,33 +144,69 @@ def visualize_partial_circuit(qc, num_ops=50):
 
 # I provide a few types of visualization, we can choose from these as we see fit in the future
 
-if __name__ == "__main__":
-    for a in [2, 7, 8, 11, 13, 4]:
-        print("\n" + "="*60)
-        print(f"Running Shor for N=15, a={a}")
-        shor_factor_demo(a=a, N=15, t=8, shots=12)
+qc = build_shor_circuit(a=7, N=15, t=8)
 
-  qc = build_shor_circuit(a=7, N=15, t=8)
+# Only the first few layers (otherwise takes forever)
 
-  # only the first few layers (otherwise takes forever)
-  
-  # print summary values
-  print("Depth:", qc.depth())
-  print("Width:", qc.width())
-  print("Size:", qc.size())
-  print(qc.count_ops())
-  
-  # basic ascii circuit visualization of all circuits
-  #print(qc)
-  
-  # matplotlib circuit diagram
-  visualize_partial_circuit(qc, num_ops=50)
+# Print summary values
+print("Depth:", qc.depth())
+print("Width:", qc.width())
+print("Size:", qc.size())
+print(qc.count_ops())
 
-# === (Thomas) Graphs Comparing Noise (Baseline)===
-#comments for every line since i will be absent and someone will have to explain code...
-import matplotlib.pyplot as plt
-import io, contextlib  
+# Basic ascii circuit visualization of all circuits
+#print(qc)
 
+# Matplotlib circuit diagram
+visualize_partial_circuit(qc, num_ops=50)
+
+# Collect Data
+# This cell runs existing Shor code many times and saves results to results.csv.
+
+# settings
+a_values = [2, 4, 7, 8, 11, 13]   # which bases to try
+trials_per_a = 20                  # how many trials per base
+shots_per_trial = 12               # shots each run
+N = 15                             # number to factor
+t = 8                              # counting precision
+
+rows = []  # Store each row per trial: [a, trial_index, success(0/1), runtime_s]
+
+sim = Aer.get_backend("qasm_simulator")
+
+for a in a_values:
+    for trial_idx in range(trials_per_a):
+        t0 = time.perf_counter()          # start a simple timer
+
+        # build + run using functions
+        qc = build_shor_circuit(a=a, N=N, t=t)                  # make the circuit
+        qc_t = transpile(qc, backend=sim, optimization_level=1) # make it compatible with backend
+        result = sim.run(qc_t, shots=shots_per_trial).result()  # execute
+        counts = result.get_counts()
+
+        success = 0
+        for bitstring, count in counts.items():
+            meas_val = int(bitstring, 2)
+            r = try_order_from_measure(meas_val, t, a, N)  # guess period r
+            if r is None:
+                continue
+            fac = try_factors_from_r(a, r, N)        # try to get factor from r
+            if fac is not None:
+                success = 1
+                break
+
+        dt = time.perf_counter() - t0               # how long the trial took
+        rows.append([a, trial_idx, success, dt])    # save one row
+
+with open("results.csv", "w", newline="") as f:
+    w = csv.writer(f)
+    w.writerow(["a", "trial_index", "success", "runtime_s"])
+    w.writerows(rows)                             # data row
+
+print("Wrote results.csv with", len(rows), "rows")
+
+
+# === PART 3 (Thomas) Graphs Comparing Noise (Baseline)===
 if __name__ == "__main__": #only runs if above is running right
     a = 7 #the base value a used is Shor's alg
     buf = io.StringIO()
