@@ -9,6 +9,9 @@ from qiskit import QuantumCircuit, transpile
 from qiskit_aer import Aer
 from qiskit_aer.noise import NoiseModel, errors
 
+import matplotlib.pyplot as plt
+import io, contextlib
+
 
 def cswap_decomp(qc, c, a, b):
     qc.ccx(b, c, a)
@@ -160,9 +163,6 @@ if __name__ == "__main__":
 
 
 # === (Thomas) Graphs Comparing Noise (Noisy Run) ===
-import matplotlib.pyplot as plt
-import io, contextlib
-
 if __name__ == "__main__":  #only runs if above code executes correctly
     a = 7  #the base value 'a' used in Shor's algorithm
     buf = io.StringIO()
