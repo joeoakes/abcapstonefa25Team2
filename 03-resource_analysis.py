@@ -1,4 +1,52 @@
 # === PART 4 (Vasu) --- Analyze Resource Usage ===
+# Collect Data
+# This cell runs existing Shor code many times and saves results to results.csv.
+
+import csv, time
+from qiskit_aer import Aer
+from qiskit import transpile
+
+# settings
+a_values = [2, 4, 7, 8, 11, 13]   # which bases to try
+trials_per_a = 20                  # how many trials per base
+shots_per_trial = 12               # shots each run
+N = 15                             # number to factor
+t = 8                              # counting precision
+
+rows = []  # Store each row per trial: [a, trial_index, success(0/1), runtime_s]
+
+sim = Aer.get_backend("qasm_simulator")
+
+for a in a_values:
+    for trial_idx in range(trials_per_a):
+        t0 = time.perf_counter()          # start a simple timer
+
+        # build + run using functions
+        qc = build_shor_circuit(a=a, N=N, t=t)                  # make the circuit
+        qc_t = transpile(qc, backend=sim, optimization_level=1) # make it compatible with backend
+        result = sim.run(qc_t, shots=shots_per_trial).result()  # execute
+        counts = result.get_counts()
+
+        success = 0
+        for bitstring, count in counts.items():
+            meas_val = int(bitstring, 2)
+            r = try_order_from_measure(meas_val, t, a, N)  # guess period r
+            if r is None:
+                continue
+            fac = try_factors_from_r(a, r, N)        # try to get factor from r
+            if fac is not None:
+                success = 1
+                break
+
+        dt = time.perf_counter() - t0               # how long the trial took
+        rows.append([a, trial_idx, success, dt])    # save one row
+
+with open("results.csv", "w", newline="") as f:
+    w = csv.writer(f)
+    w.writerow(["a", "trial_index", "success", "runtime_s"])
+    w.writerows(rows)                             # data row
+
+print("Wrote results.csv with", len(rows), "rows")
 
 # === PART 5 (Thomas + Jon) --- Data Visualization ===
 #THIS WONT WORK IF YOU JUST PUT IT ALONE BUT I WILL PLACE IT HERE 
