@@ -1,8 +1,21 @@
 # Breaking Crypto with Quantum Simulation - Team 2
 
+## Project Overview
+
 This project, developed by Team 2 (Team Yoda) explores how quantum computing can challenege classical encryption by simulationg **Shor's Algorithm** - a quantum method for factoring the large intergers commonly using in RSA encryption. 
 
 Using both Python and Qiskit, our team has developed a simulator that **performs quantum factoring** on smaller RSA problems, measures the **error and noise effects** and success probability with each run, and has been **optimized** after each run.
+
+## Project Objectives
+
+* **Demonstrate Quantum Factoring:**
+  Build and simulate a wroking version of Shpr's Algortihm in PYhton using Qiskit.
+* **Model Realistic Quantum Behavior:**
+  Introduce noise models to understand how errors and decoherence affect success rates.
+* **Optimize Quantum Circuits:**
+  Reduce number of gates and circuit depth through different forms of optimization.
+* **Estimate Resource Costs:**
+  Approximate the number of qubits, gate operations, runtime, and energy consumption necessary for large-scale quantum factoring.
 
 ## Project Structure
 
@@ -20,7 +33,7 @@ Using both Python and Qiskit, our team has developed a simulator that **performs
 
 ## Setup
 
-### Dependencies
+### Technologies Used
 
 * Python 3.9 or higher  
 * Required libraries:
@@ -28,7 +41,7 @@ Using both Python and Qiskit, our team has developed a simulator that **performs
 pip install qiskit matplotlib numpy pylatexenc
 ```
 
-### Executing program
+### How to Run
 
 * Clone or download this repository  
 * Navigate to the project folder  
@@ -39,7 +52,7 @@ cd abcapstonefa25Team2
 python 01-shor_noiseless_demo.py
 ```
 
-## Help
+## How to Test
 
 * If Qiskit backend errors occur:
 ```
@@ -49,15 +62,23 @@ pip install --upgrade qiskit
   * Reduce the number of qubits or test a smaller integer (e.g., N = 15)  
   * Disable noise models or reduce shots (`shots=512`)  
   * Run only the core factoring circuit for validation
+ 
+## Results and Screen Captures
+```
+* Insert Here *
+```
 
 ## Version History
 
 * 0.1
     * Initial Release
  
-## Professor
+## Course Information
 
-* Joe Oakes - CMPSC 488/IST 440W FW25
+* Course: CMPSC 488/IST 440W
+* Institution: Penn State Abington
+* Term: Fall/Winter 2025
+* Professor: Joe Oakes
 
 ## Team 2 Members
 
@@ -73,4 +94,8 @@ pip install --upgrade qiskit
 
 * Qiskit Documentation – [https://docs.quantum.ibm.com](https://docs.quantum.ibm.com)
 
+## License Details
+```
+* Insert Here *
+```
 
