@@ -65,7 +65,9 @@ pip install --upgrade qiskit
  
 ## Results and Screen Captures
 
-!.Pictures/IMG_5566.png
+<img width="586" height="384" alt="IMG_6321" src="https://github.com/user-attachments/assets/dbbed5fc-11b1-456f-9af1-636005837a8e" />
+
+<img width="586" height="384" alt="IMG_5566" src="https://github.com/user-attachments/assets/048460e9-89bb-44e4-a143-eece043fb8ff" />
 
 
 ## Version History
