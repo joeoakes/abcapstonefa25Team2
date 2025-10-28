@@ -64,9 +64,9 @@ pip install --upgrade qiskit
   * Run only the core factoring circuit for validation
  
 ## Results and Screen Captures
-```
+
 Pictures/IMG_5566.png
-```
+
 
 ## Version History
 
