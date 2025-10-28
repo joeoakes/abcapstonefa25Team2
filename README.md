@@ -65,7 +65,7 @@ pip install --upgrade qiskit
  
 ## Results and Screen Captures
 
-!Pictures/IMG_5566.png
+!.Pictures/IMG_5566.png
 
 
 ## Version History
