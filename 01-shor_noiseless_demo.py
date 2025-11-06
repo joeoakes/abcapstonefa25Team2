@@ -4,15 +4,12 @@
 # Date Developed: 10/21/25
 # Last Date Changed: 10/23/25
 
-!pip install qiskit
-!pip install qiskit qiskit-aer
-!pip install matplotlib
-!pip install pylatexenc
-
 import math
 from fractions import Fraction
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import Aer
+
+import os
 
 import pylatexenc
 
@@ -20,6 +17,8 @@ import csv, time
 from qiskit_aer import Aer
 from qiskit import transpile
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io, contextlib
 
@@ -133,7 +132,21 @@ def shor_factor_demo(a, N=15, t=8, shots=12):
         else:
             print("No factors from this r.")
     print("No non-trivial factors found.")
+    with open("results.csv", "w", newline="") as f:
+        w = csv.writer(f)
+        w.writerow(["a", "trial_index", "success", "runtime_s"])
+        w.writerows(rows)
 
+    print("Wrote results.csv with", len(rows), "rows")
+
+    # Convert rows into counts dictionary
+    counts = {}
+    for a, trial_index, success, runtime_s in rows:
+        key = f"a={a}_trial={trial_index}_success={success}"
+        counts[key] = counts.get(key, 0) + 1
+
+    return counts
+    return counts
 # === PART 2 (Marco) --- Visualizing Ciruits ===
 # Function to visualize prefix of circuit with matplotlib (can change num_ops for more/less circuits)
 def visualize_partial_circuit(qc, num_ops=50):
@@ -160,6 +173,7 @@ print(qc.count_ops())
 # Matplotlib circuit diagram
 visualize_partial_circuit(qc, num_ops=50)
 
+plt.close()
 # Collect Data
 # This cell runs existing Shor code many times and saves results to results.csv.
 
@@ -204,16 +218,37 @@ with open("results.csv", "w", newline="") as f:
     w.writerows(rows)                             # data row
 
 print("Wrote results.csv with", len(rows), "rows")
-
-
 # === PART 3 (Thomas) Graphs Comparing Noise (Baseline)===
 if __name__ == "__main__": #only runs if above is running right
     a = 7 #the base value a used is Shor's alg
     buf = io.StringIO()
 
-    with contextlib.redirect_stdout(buf): #makes sure things (like “Candidate period r = …”) doesnt showup
-        counts = shor_factor_demo(a=a, N=15, t=8, shots=1024) ##Run the Shor algorithm demo for given parameters (a=7, N=15, t=8) with 1024 shots
-         #Returns a dictionary of measurement outcomes (bitstrings) and how often they occurred
+    from qiskit_aer import Aer
+    from qiskit import transpile
+
+    with contextlib.redirect_stdout(buf):
+        backend = Aer.get_backend("aer_simulator_statevector")
+        qc = build_shor_circuit(a=a, N=15, t=8)
+        qc.measure_all()
+        tqc = transpile(qc, backend)
+        result = backend.run(tqc, shots=2048).result()
+        counts = result.get_counts()
+    print("counts =", counts)
+
+
+    trimmed_counts = {}
+    for bitstring, count in counts.items():
+        bits = bitstring.replace(" ", "")  # remove spaces if any
+        trimmed = bits[-8:]                # keep the last 8 bits only
+        trimmed_counts[trimmed] = trimmed_counts.get(trimmed, 0) + count
+    counts = trimmed_counts
+    print("trimmed counts =", counts)
+    if not counts:
+        import pandas as pd
+        df = pd.read_csv("results.csv")
+        success_counts = df.groupby("a")["success"].sum().to_dict()
+        counts = {f"a={k}": v for k, v in success_counts.items()}
+        print("Loaded counts from results.csv:", counts)
 
     if counts:  #only plot if valid data
         total_shots = sum(counts.values())#Compute the total number of measurements taken
@@ -224,6 +259,7 @@ if __name__ == "__main__": #only runs if above is running right
         top_probs = dict(sorted(probabilities.items(), key=lambda x: x[1], reverse=True)[:N_show])
 
         plt.figure(figsize=(6,4))#Create a new window and set its size
+
         bars = plt.bar(top_probs.keys(), top_probs.values(), color='blue')#Draw a bar chart of bitstring probabilities
         plt.title(f"Top Measurement Outcomes for a={a} (No Noise)") #title indicating which base (a=7)(or whatever we use) and that it’s a no noise baseline measurement 
         plt.xlabel("Measured Bitstring") #label horizontal axis
@@ -238,5 +274,6 @@ if __name__ == "__main__": #only runs if above is running right
                 f"{val*100:.1f}%",#show value as a percentage (1 decimal)
                 ha='center', va='bottom', fontsize=10#center alignment and font size
             )
-
-        plt.show()#display chart
+    print("Figures available:", plt.get_fignums())
+    plt.savefig("noiseless_plot.png")#display chart
+    print("saved noiseless_plot.png in", os.getcwd())

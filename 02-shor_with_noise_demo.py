@@ -9,7 +9,7 @@ from fractions import Fraction
 from qiskit import QuantumCircuit, transpile
 from qiskit_aer import Aer
 from qiskit_aer.noise import NoiseModel, errors
-
+import os
 import matplotlib.pyplot as plt
 import io, contextlib
 
@@ -127,7 +127,7 @@ def shor_with_noise(a, N=15, t=8, shots=512, noisy=False):
 
     if noisy:
         noise_model = create_simple_noise_model()
-        sim = Aer.get_backend("aer_simulator")
+        sim = Aer.get_backend("aer_simulator_statevector")
         qc_t = transpile(qc, sim)
         print("\n Running with noise model...")
         result = sim.run(qc_t, shots=shots, noise_model=noise_model).result()
@@ -198,5 +198,6 @@ if __name__ == "__main__":  #only runs if above code executes correctly
                 va='bottom',
                 fontsize=10,
             )
-
-        plt.show()  #display chart
+    plt.savefig("noisy_plot.png")
+    print("saved noisy_plot.png in", os.getcwd())
+       # plt.show()  #display chart
