@@ -10,7 +10,7 @@ from qiskit import QuantumCircuit, transpile
 from qiskit_aer import Aer
 
 import os
-
+import time
 import pylatexenc
 
 import csv, time
@@ -23,6 +23,7 @@ import matplotlib.pyplot as plt
 import io, contextlib
 
 # === PART 1 (Martin) --- Shor's Algorithm ===
+start_time1 = time.time()
 def cswap_decomp(qc, c, a, b):
     # Controlled swap between qubits a and b if control qubit c = 1
     qc.ccx(a, c, b)
@@ -147,8 +148,11 @@ def shor_factor_demo(a, N=15, t=8, shots=12):
 
     return counts
     return counts
+end_time1 = time.time()
+elapsed_time1 = end_time1 - start_time1
 # === PART 2 (Marco) --- Visualizing Ciruits ===
 # Function to visualize prefix of circuit with matplotlib (can change num_ops for more/less circuits)
+start_time2 = time.time()
 def visualize_partial_circuit(qc, num_ops=50):
   partial = QuantumCircuit(qc.num_qubits, qc.num_clbits)
   for instr, qargs, cargs in qc.data[:num_ops]:
@@ -218,21 +222,20 @@ with open("results.csv", "w", newline="") as f:
     w.writerows(rows)                             # data row
 
 print("Wrote results.csv with", len(rows), "rows")
+end_time2 = time.time()
+elapsed_time2 = end_time2 - start_time2
 # === PART 3 (Thomas) Graphs Comparing Noise (Baseline)===
+
+start_time3 = time.time()
 if __name__ == "__main__": #only runs if above is running right
     a = 7 #the base value a used is Shor's alg
-    buf = io.StringIO()
 
-    from qiskit_aer import Aer
-    from qiskit import transpile
-
-    with contextlib.redirect_stdout(buf):
-        backend = Aer.get_backend("aer_simulator_statevector")
-        qc = build_shor_circuit(a=a, N=15, t=8)
-        qc.measure_all()
-        tqc = transpile(qc, backend)
-        result = backend.run(tqc, shots=2048).result()
-        counts = result.get_counts()
+    backend = Aer.get_backend("aer_simulator_statevector")
+    qc = build_shor_circuit(a=a, N=15, t=8)
+    qc.measure_all()
+    tqc = transpile(qc, backend)
+    result = backend.run(tqc, shots=2048).result()
+    counts = result.get_counts()
     print("counts =", counts)
 
 
@@ -276,4 +279,33 @@ if __name__ == "__main__": #only runs if above is running right
             )
     print("Figures available:", plt.get_fignums())
     plt.savefig("noiseless_plot.png")#display chart
-    print("saved noiseless_plot.png in", os.getcwd())
+    print("Saved noiseless_plot.png in", os.getcwd())
+ 
+end_time3 = time.time()
+elapsed_time3 = end_time3 - start_time3
+parts = ['Part 2', 'Part 3']
+times = [elapsed_time2, elapsed_time3]
+
+# Create a bar chart
+parts = ['Part 2', 'Part 3']
+times = [elapsed_time2, elapsed_time3]
+
+plt.figure(figsize=(6,4))
+bars = plt.bar(parts, times)
+
+plt.xlabel('Code Section')
+plt.ylabel('Elapsed Time (seconds)')
+plt.title('Benchmarking: Execution Time by Part')
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+# Add text labels on each bar
+for bar, value in zip(bars, times):
+    plt.text(
+        bar.get_x() + bar.get_width() / 2,  # x position (center of bar)
+        value,                              # y position (top of bar)
+        f"{value:.3f}s",                    # label text (rounded to 3 decimals)
+        ha='center', va='bottom', fontsize=10, fontweight='bold'
+    )
+
+plt.savefig('benchmark_timing.png')
+print("Saved benchmark_timing.png in", os.getcwd())
