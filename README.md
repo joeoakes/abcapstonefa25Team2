@@ -76,12 +76,14 @@ pip install --upgrade qiskit
 
 A majority of our life that connects to the internet, runs off a sort of encryption, whether that be your credit cards, your password to banking systems, purchasing something off of amazon, and much more. But a majority of our online traffic, through HTTPS is secured using a type of encryption called RSA.
 
-Not just HTTPS, but RSA secures the connection for emails, SSH, and even VPN’s to name a few. Roughly 70% of websites across the internet still use RSA to encrypt traffic between servers and users. A common example is the connection to you googling which is secured by RSA. [Picture]. 
+Not just HTTPS, but RSA secures the connection for emails, SSH, and even VPN’s to name a few. Roughly 70% of websites across the internet still use RSA to encrypt traffic between servers and users. A common example is the connection used when using Google which is secured by RSA, as shown below.
+
+<img width="513" height="370" alt="SCR-20251106-gak" src="https://github.com/user-attachments/assets/d5b2ec57-d542-4ca7-a566-1c9b4067b004" />
 
 RSA is done in 3 steps:
 * Key Generation: Choose two large primes (p, q), compute n = p × q, find public exponent e and private exponent d.
 * Encryption / Signing: Convert the message to a number m and compute the ciphertext (c) as, c = mᵉ mod n.
-* Decryption / Verification – compute m = cᵈ mod n (or verify by checking sᵉ mod n = m).
+* Decryption / Verification: compute m = cᵈ mod n (or verify by checking sᵉ mod n = m).
 
 The public key is what’s important in this, that key, keeps the prime numbers unknown and hard to factor when in a large numbers, which is what can bring you the decryption key. Classical computers would take tens of billions of years to break RSA-2048, the sun would explode before we can try to crack a key that large. But with quantum computers that process to factor the public key in theory would only take hours to possibly days
 
