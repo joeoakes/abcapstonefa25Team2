@@ -70,6 +70,25 @@ pip install --upgrade qiskit
 
 <img width="390" height="256" alt="Noise Graph" src="https://github.com/user-attachments/assets/048460e9-89bb-44e4-a143-eece043fb8ff" />
 
+## Ethics
+
+### Background
+
+A majority of our life that connects to the internet, runs off a sort of encryption, whether that be your credit cards, your password to banking systems, purchasing something off of amazon, and much more. But a majority of our online traffic, through HTTPS is secured using a type of encryption called RSA.
+
+Not just HTTPS, but RSA secures the connection for emails, SSH, and even VPN’s to name a few. Roughly 70% of websites across the internet still use RSA to encrypt traffic between servers and users. A common example is the connection to you googling which is secured by RSA. [Picture]. 
+
+RSA is done in 3 steps:
+* Key Generation: Choose two large primes (p, q), compute n = p × q, find public exponent e and private exponent d.
+* Encryption / Signing: Convert the message to a number m and compute the ciphertext (c) as, c = mᵉ mod n.
+* Decryption / Verification – compute m = cᵈ mod n (or verify by checking sᵉ mod n = m).
+
+The public key is what’s important in this, that key, keeps the prime numbers unknown and hard to factor when in a large numbers, which is what can bring you the decryption key. Classical computers would take tens of billions of years to break RSA-2048, the sun would explode before we can try to crack a key that large. But with quantum computers that process to factor the public key in theory would only take hours to possibly days
+
+### Is this Ethical?
+
+In short, no. The second we get the ability to crack RSA with quantum computers, we risk the infrastructure, integrity and safety of almost the entire internet as a whole, besides the political and human impact it would cause. There is no estimate on how much money the world would lose and how much would be impacted, but when processed it could be in the billions into trillions. All sorts of data can be exposed and breached when tapped into a connection between the server and the client. Think credit cards details once secure behind a payment screen encrypted by RSA now exposed and decrypted, sold to the highest bidder, and the emails that can expose national security risks. 
+
 
 ## Version History
 
