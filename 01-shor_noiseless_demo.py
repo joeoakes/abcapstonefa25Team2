@@ -279,7 +279,7 @@ if __name__ == "__main__": #only runs if above is running right
             )
     print("Figures available:", plt.get_fignums())
     plt.savefig("noiseless_plot.png")#display chart
-    print("Saved noiseless_plot.png in", os.getcwd())
+    print("saved noiseless_plot.png in", os.getcwd())
  
 end_time3 = time.time()
 elapsed_time3 = end_time3 - start_time3
@@ -308,4 +308,4 @@ for bar, value in zip(bars, times):
     )
 
 plt.savefig('benchmark_timing.png')
-print("Saved benchmark_timing.png in", os.getcwd())
+print("saved benchmark_timing.png in", os.getcwd())
