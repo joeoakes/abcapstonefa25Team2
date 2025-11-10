@@ -12,8 +12,9 @@ from qiskit_aer.noise import NoiseModel, errors
 import os
 import matplotlib.pyplot as plt
 import io, contextlib
+import time 
 
-
+start_time1 = time.time()
 def cswap_decomp(qc, c, a, b):
     qc.ccx(b, c, a)
     qc.ccx(a, c, b)
@@ -160,10 +161,12 @@ if __name__ == "__main__":
         shor_with_noise(a, N=15, t=8, shots=512, noisy=False)
         print("\nNoisy simulation:")
         shor_with_noise(a, N=15, t=8, shots=512, noisy=True)
-
+end_time1 = time.time()
+elapsed_time1 = end_time1 - start_time1
 
 
 # === (Thomas) Graphs Comparing Noise (Noisy Run) ===
+start_time2 = time.time()
 if __name__ == "__main__":  #only runs if above code executes correctly
     a = 7  #the base value 'a' used in Shor's algorithm
     buf = io.StringIO()
@@ -201,3 +204,28 @@ if __name__ == "__main__":  #only runs if above code executes correctly
     plt.savefig("noisy_plot.png")
     print("saved noisy_plot.png in", os.getcwd())
        # plt.show()  #display chart
+end_time2 = time.time()
+elapsed_time2 = end_time2 - start_time2
+
+parts = ['Part 1', 'Part 2']
+times = [elapsed_time1, elapsed_time2]
+
+plt.figure(figsize=(6,4))
+bars = plt.bar(parts, times)
+
+plt.xlabel('Code Section')
+plt.ylabel('Elapsed Time (seconds)')
+plt.title('Benchmarking: Execution Time by Part')
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+# Add text labels on each bar
+for bar, value in zip(bars, times):
+    plt.text(
+        bar.get_x() + bar.get_width() / 2,  # x position (center of bar)
+        value,                              # y position (top of bar)
+        f"{value:.3f}s",                    # label text (rounded to 3 decimals)
+        ha='center', va='bottom', fontsize=10, fontweight='bold'
+    )
+
+plt.savefig('02benchmark_timing.png')
+print("saved 02benchmark_timing.png in", os.getcwd())
