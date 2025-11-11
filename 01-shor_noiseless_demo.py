@@ -4,10 +4,18 @@
 # Date Developed: 10/21/25
 # Last Date Changed: 10/23/25
 
+# marco's shor's optimizations added 11/11/25
+
 import math
 from fractions import Fraction
-from qiskit import QuantumCircuit, transpile
+from qiskit import QuantumCircuit, transpile, ClassicalRegister, QuantumRegister
 from qiskit_aer import Aer
+
+from qiskit.circuit.library import QFT
+from qiskit.circuit.library.standard_gates import RCCXGate
+from qiskit.transpiler import PassManager
+from qiskit.transpiler.passes import Optimize1qGates, CommutativeCancellation
+from qiskit.synthesis.qft import synth_qft_full
 
 import os
 import time
@@ -24,54 +32,51 @@ import io, contextlib
 
 # === PART 1 (Martin) --- Shor's Algorithm ===
 start_time1 = time.time()
-def cswap_decomp(qc, c, a, b):
-    # Controlled swap between qubits a and b if control qubit c = 1
-    qc.ccx(a, c, b)
-    qc.ccx(b, c, a)
-    qc.ccx(a, c, b)
+# removed old cswap_decomp, replaced with native cswap
 
-def iqft_in_place(qc, qubits):
-    # Inverse Quantum Fourier Transform on given qubits
-    n = len(qubits)
-    for j in range(n//2):
-        qc.swap(qubits[j], qubits[n-1-j])
-    for j in range(n-1, -1, -1):
-        for k in range(j+1, n):
-            qc.cp(-math.pi/(2**(k-j)), qubits[k], qubits[j])
-        qc.h(qubits[j])
+# This avoids 'InstructionSet' errors while achieving the same effect:
+# fewer gates due to truncated rotations and optimized synthesis.
+
+def approximate_iqft(qc, qubits, approximation_degree=3):
+    """Approximate inverse QFT using Qiskit synthesis backend"""
+    iqft_circ = synth_qft_full(num_qubits=len(qubits), inverse=True, approximation_degree=approximation_degree)
+    qc.append(iqft_circ, qubits)
 
 def apply_controlled_mul_a_mod_15(qc, ctrl, work, a, power):
-    # Controlled modular multiplication by 'a' mod 15
-    for _ in range(power):
-        if a in [2, 13]:
-            cswap_decomp(qc, ctrl, work[2], work[3])
-            cswap_decomp(qc, ctrl, work[1], work[2])
-            cswap_decomp(qc, ctrl, work[0], work[1])
-        if a in [7, 8]:
-            cswap_decomp(qc, ctrl, work[0], work[1])
-            cswap_decomp(qc, ctrl, work[1], work[2])
-            cswap_decomp(qc, ctrl, work[2], work[3])
-        if a in [4, 11]:
-            cswap_decomp(qc, ctrl, work[1], work[3])
-            cswap_decomp(qc, ctrl, work[0], work[2])
-        if a in [7, 11, 13]:
-            qc.cx(ctrl, work[0])
-            qc.cx(ctrl, work[1])
-            qc.cx(ctrl, work[2])
-            qc.cx(ctrl, work[3])
+  # optimized modular multiplication circuit for n=15
+  # uses lookup table instread of repeated if statements
+
+  # use qiskit.circuit.library.arithmetic for larger!
+
+  # lookup tables for swap networks
+  swap_patterns = {
+      2: [(2, 3), (1, 2), (0, 1)],
+        13: [(2, 3), (1, 2), (0, 1)],
+        7: [(0, 1), (1, 2), (2, 3)],
+        8: [(0, 1), (1, 2), (2, 3)],
+        4: [(1, 3), (0, 2)],
+        11: [(1, 3), (0, 2)],
+    }
+  xor_all = {7, 11, 13} # a values that need full bit flips
+
+  swaps = swap_patterns.get(a, [])
+  for _ in range(power):
+        for pair in swaps:
+          qc.cswap(ctrl, work[pair[0]], work[pair[1]])
+        if a in xor_all:
+          for i in range(4):
+            qc.cx(ctrl, work[i])
 
 def controlled_U(qc, controls, work, a):
-    # Apply controlled powers of U (a^2^k mod 15)
+  # apply modular exponentiation block using powers of a
     for k, ctrl in enumerate(controls):
         apply_controlled_mul_a_mod_15(qc, ctrl, work, a, 2**k)
 
 def continued_fraction_phase_estimate(meas_value, t):
-    # Convert measurement to fraction for period estimation
     phase = meas_value / (2 ** t)
     return Fraction(phase).limit_denominator(2 ** t)
 
 def try_order_from_measure(meas, t, a, N):
-    # Try to find the order r from the measurement result
     frac = continued_fraction_phase_estimate(meas, t)
     if frac.denominator == 0:
         return None
@@ -84,7 +89,6 @@ def try_order_from_measure(meas, t, a, N):
     return None
 
 def try_factors_from_r(a, r, N):
-    # Try to compute non-trivial factors using r
     if r is None or r % 2 == 1:
         return None
     x = pow(a, r // 2, N)
@@ -96,29 +100,65 @@ def try_factors_from_r(a, r, N):
         return (p, q)
     return None
 
-def build_shor_circuit(a, N=15, t=8):
-    # Build Shor's order-finding circuit
+def build_shor_circuit(a, N=15, t=8, approximation_degree=3):
     counting = t
     work = 4
-    qc = QuantumCircuit(counting + work, counting)
-    qc.x(counting)  # set work register to |1>
+    qc = QuantumCircuit(counting + work)
+
+    creg = ClassicalRegister(t, "c")
+    qc.add_register(creg)
+
+    # Step 1: Initialize |1> state in the work register
+    qc.x(counting)
+
+    # Step 2: Hadamard on counting register
     for i in range(counting):
-        qc.h(i)  # put counting qubits in superposition
+        qc.h(i)
+
+    # Step 3: Apply controlled modular exponentiation
     controlled_U(qc, range(counting), list(range(counting, counting + work)), a)
-    iqft_in_place(qc, list(range(counting)))  # apply inverse QFT
+
+    # Step 4: Apply inverse QFT (approximate)
+    # replaced iqft_in_place with semi-classical iqft
+    approximate_iqft(qc, list(range(counting)), approximation_degree=approximation_degree)
+
+    # Step 5: Measure counting register
     qc.measure(range(counting), range(counting))
+
     return qc
 
-def shor_factor_demo(a, N=15, t=8, shots=12):
-    # Run simulation and extract factors
+def shor_factor_demo(a, N=15, t=8, shots=12, opt_level=3):
     if math.gcd(a, N) != 1:
         print(f"gcd({a},{N}) != 1:", math.gcd(a, N))
         return
+
     qc = build_shor_circuit(a, N, t)
     sim = Aer.get_backend("qasm_simulator")
-    qc_t = transpile(qc, backend=sim, optimization_level=1)
+
+    pm = PassManager([Optimize1qGates(), CommutativeCancellation()])
+
+    # run pass manager for early optimizations (1q merges, cancellations)
+    # returns new qc in place
+    qc_after_pm = pm.run(qc)
+
+    # High-level transpilation optimization
+    qc_t = transpile(
+        qc_after_pm,
+        backend=sim,
+        optimization_level=opt_level,
+        layout_method="sabre",
+        routing_method="sabre",
+        #basis_gates=["cx", "u3", "id"], # target ibmq-compatible gates
+    )
+
+    # --- Diagnostics ---
+    print(f"Qubits: {qc_t.num_qubits}, Depth: {qc_t.depth()}")
+    print("Gate counts:", qc_t.count_ops())
+
     result = sim.run(qc_t, shots=shots).result()
     counts = result.get_counts()
+
+    # Postprocess results
     for bitstring, count in counts.items():
         meas_val = int(bitstring, 2)
         r = try_order_from_measure(meas_val, t, a, N)
@@ -129,23 +169,10 @@ def shor_factor_demo(a, N=15, t=8, shots=12):
         if factors is not None:
             p, q = factors
             print(f"SUCCESS: {p} × {q} = {N}")
-            return
+            return counts
         else:
             print("No factors from this r.")
     print("No non-trivial factors found.")
-    with open("results.csv", "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["a", "trial_index", "success", "runtime_s"])
-        w.writerows(rows)
-
-    print("Wrote results.csv with", len(rows), "rows")
-
-    # Convert rows into counts dictionary
-    counts = {}
-    for a, trial_index, success, runtime_s in rows:
-        key = f"a={a}_trial={trial_index}_success={success}"
-        counts[key] = counts.get(key, 0) + 1
-
     return counts
     return counts
 end_time1 = time.time()
