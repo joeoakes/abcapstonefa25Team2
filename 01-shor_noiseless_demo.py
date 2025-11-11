@@ -175,6 +175,14 @@ def shor_factor_demo(a, N=15, t=8, shots=12, opt_level=3):
     print("No non-trivial factors found.")
     return counts
     return counts
+
+# test run
+
+for a in [2, 7, 8, 11, 13, 4]:
+    print("\n" + "=" * 60)
+    print(f"Running Shor for N=15, a={a}")
+    shor_factor_demo(a=a, N=15, t=8, shots=12, opt_level=3)
+
 end_time1 = time.time()
 elapsed_time1 = end_time1 - start_time1
 # === PART 2 (Marco) --- Visualizing Ciruits ===
