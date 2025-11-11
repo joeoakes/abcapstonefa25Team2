@@ -5,6 +5,12 @@
 # Last Date Changed: 10/23/25
 
 # marco's shor's optimizations added 11/11/25
+#thomas's benchmark timing and depth and cate count graphing 
+ # required dependancies
+#!pip install qiskit --quiet
+#!pip install qiskit_aer --quiet
+#!pip install qiskit_ibm_runtime --quiet
+#!pip install pylatexenc --quiet
 
 import math
 from fractions import Fraction
@@ -318,12 +324,12 @@ if __name__ == "__main__": #only runs if above is running right
  
 end_time3 = time.time()
 elapsed_time3 = end_time3 - start_time3
-parts = ['Part 2', 'Part 3']
-times = [elapsed_time2, elapsed_time3]
+parts = ['Part 1', 'Part 2', 'Part 3']
+times = [elapsed_time1, elapsed_time2, elapsed_time3]
 
 # Create a bar chart
-parts = ['Part 2', 'Part 3']
-times = [elapsed_time2, elapsed_time3]
+parts = ['Part 1','Part 2', 'Part 3']
+times = [elapsed_time1, elapsed_time2, elapsed_time3]
 
 plt.figure(figsize=(6,4))
 bars = plt.bar(parts, times)
@@ -344,3 +350,31 @@ for bar, value in zip(bars, times):
 
 plt.savefig('benchmark_timing.png')
 print("saved benchmark_timing.png in", os.getcwd())
+
+qc_test = build_shor_circuit(a=7, N=15, t=8)
+sim = Aer.get_backend("qasm_simulator")
+qc_t = transpile(qc_test, backend=sim, optimization_level=3)
+
+depth = qc_t.depth()
+gate_count = sum(qc_t.count_ops().values())
+
+plt.figure(figsize=(5,4))
+metrics = ['Depth', 'Gate Count']
+values = [depth, gate_count]
+bars = plt.bar(metrics, values)
+
+plt.xlabel('Metric')
+plt.ylabel('Count')
+plt.title('Quantum Circuit Complexity (Depth vs Gate Count)')
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+
+for bar, val in zip(bars, values):
+    plt.text(
+        bar.get_x() + bar.get_width()/2,
+        val,
+        f"{val}",
+        ha='center', va='bottom', fontsize=10, fontweight='bold'
+    )
+plt.tight_layout()
+plt.savefig('depth_gatecount.png')
+print(f"Saved depth_gatecount.png (Depth={depth}, Total Gates={gate_count})")
