@@ -5,7 +5,7 @@ import sys
 import os
 
 # Dynamically import the module, regardless of its filename
-module_path = os.path.abspath("01_shor_noiseless_demo.py")
+module_path = os.path.abspath("01-shor_noiseless_demo.py")
 spec = importlib.util.spec_from_file_location("shor_mod", module_path)
 shor_mod = importlib.util.module_from_spec(spec)
 sys.modules["shor_mod"] = shor_mod
