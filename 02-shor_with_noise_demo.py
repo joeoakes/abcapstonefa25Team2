@@ -6,68 +6,44 @@
 # === PART 3 (Marcos) --- Introducing Noise ===
 import math
 from fractions import Fraction
-from qiskit import QuantumCircuit, transpile
+from qiskit import QuantumCircuit, ClassicalRegister, transpile
 from qiskit_aer import Aer
 from qiskit_aer.noise import NoiseModel, errors
-import os
+from qiskit.circuit.library import UnitaryGate
+
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-import io, contextlib
-import time 
+import os
 
-start_time1 = time.time()
-def cswap_decomp(qc, c, a, b):
-    qc.ccx(b, c, a)
-    qc.ccx(a, c, b)
-    qc.ccx(b, c, a)
 
-def iqft_in_place(qc, qubits):
-    n = len(qubits)
-    for j in range(n // 2):
-        qc.swap(qubits[j], qubits[n - 1 - j])
-    for j in range(n - 1, -1, -1):
-        for k in range(j + 1, n):
-            qc.cp(-math.pi / (2 ** (k - j)), qubits[k], qubits[j])
-        qc.h(qubits[j])
+def choose_t_for_N(N):
+    n = math.ceil(math.log2(N))
+    return max(4, n + 2)
 
-def apply_controlled_mul_a_mod_15(qc, ctrl, work, a, power):
-    for _ in range(power):
-        if a in [2, 13]:
-            cswap_decomp(qc, ctrl, work[2], work[3])
-            cswap_decomp(qc, ctrl, work[1], work[2])
-            cswap_decomp(qc, ctrl, work[0], work[1])
-        if a in [7, 8]:
-            cswap_decomp(qc, ctrl, work[0], work[1])
-            cswap_decomp(qc, ctrl, work[1], work[2])
-            cswap_decomp(qc, ctrl, work[2], work[3])
-        if a in [4, 11]:
-            cswap_decomp(qc, ctrl, work[1], work[3])
-            cswap_decomp(qc, ctrl, work[0], work[2])
-        if a in [7, 11, 13]:
-            qc.cx(ctrl, work[0])
-            qc.cx(ctrl, work[1])
-            qc.cx(ctrl, work[2])
-            qc.cx(ctrl, work[3])
 
-def controlled_U(qc, controls, work, a):
-    for k, ctrl in enumerate(controls):
-        apply_controlled_mul_a_mod_15(qc, ctrl, work, a, 2 ** k)
 
 def continued_fraction_phase_estimate(meas_value, t):
     phase = meas_value / (2 ** t)
     return Fraction(phase).limit_denominator(2 ** t)
+
 
 def try_order_from_measure(meas, t, a, N):
     frac = continued_fraction_phase_estimate(meas, t)
     if frac.denominator == 0:
         return None
     r = frac.denominator
-    for candidate in [r, 2*r, 3*r, 4*r]:
+    if r <= 0:
+        return None
+    for candidate in [r, 2 * r, 3 * r, 4 * r]:
         if pow(a, candidate, N) == 1:
             return candidate
     return None
 
+
 def try_factors_from_r(a, r, N):
-    if r is None or r % 2 == 1:
+    if r is None or r % 2 != 0:
         return None
     x = pow(a, r // 2, N)
     if x in [1, N - 1, 0]:
@@ -79,153 +55,167 @@ def try_factors_from_r(a, r, N):
     return None
 
 
-def build_shor_circuit(a, N=15, t=8):
+def approximate_iqft(qc, qubits, approximation_degree=3):
+    n = len(qubits)
+    for j in range(n // 2):
+        qc.swap(qubits[j], qubits[n - j - 1])
+    for j in range(n):
+        for k in range(j):
+            if j - k <= approximation_degree:
+                qc.cp(-math.pi / (2 ** (j - k)), qubits[j], qubits[k])
+        qc.h(qubits[j])
+
+
+def _build_perm_matrix_from_mapping(mapping, dim):
+    mat = np.zeros((dim, dim), dtype=complex)
+    for x, y in mapping.items():
+        mat[y, x] = 1.0
+    return mat
+
+
+def apply_controlled_mul_a_mod_N(qc, ctrl, work, a, N, power):
+    n_work = len(work)
+    dim = 2 ** n_work
+    if N > dim:
+        raise ValueError(f"work register too small for N={N} (have {n_work} qubits)")
+    a_k = pow(a, power, N)
+    mapping = {}
+    for x in range(dim):
+        if x < N:
+            y = (a_k * x) % N
+        else:
+            y = x
+        mapping[x] = y
+    mat = _build_perm_matrix_from_mapping(mapping, dim)
+    gate = UnitaryGate(mat, label=f"mul_{a_k}_mod_{N}")
+    cgate = gate.control(1)
+    qc.append(cgate, [ctrl] + list(work))
+
+
+def build_shor_circuit_general(a, N, t=None, approximation_degree=3):
+    if t is None:
+        t = choose_t_for_N(N)
     counting = t
-    work = 4
-    qc = QuantumCircuit(counting + work, counting)
-    qc.x(counting)  # initialize |1> in work register
+    work = math.ceil(math.log2(N))
+    dim = 2 ** work
+    if N > dim:
+        raise ValueError(f"work register too small for N={N} (have {work} qubits)")
+
+    qc = QuantumCircuit(counting + work)
+    creg = ClassicalRegister(t, "c")
+    qc.add_register(creg)
+
+    qc.x(counting)
+
     for i in range(counting):
         qc.h(i)
-    controlled_U(qc, range(counting), list(range(counting, counting + work)), a)
-    iqft_in_place(qc, list(range(counting)))
+
+    for k, ctrl in enumerate(range(counting)):
+        power = 2 ** k
+        apply_controlled_mul_a_mod_N(qc, ctrl, list(range(counting, counting + work)), a, N, power)
+
+    approximate_iqft(qc, list(range(counting)), approximation_degree=approximation_degree)
     qc.measure(range(counting), range(counting))
-    return qc
 
-# https://quantum.cloud.ibm.com/docs/en/guides/build-noise-models
+    return qc, t
+
+
 def create_simple_noise_model():
-
     noise_model = NoiseModel()
-    # 1-qubit depolarizing error (~0.1%)
-    depol_1 = errors.depolarizing_error(0.001, 1)
-
-    # 2-qubit depolarizing error (~1%)
-    depol_2 = errors.depolarizing_error(0.01, 2)
-
-    # 3-qubit depolarizing error (~1.5%)
-    depol_3 = errors.depolarizing_error(0.015, 3)
-
-    # Readout error (~10%)
-    readout_err = errors.ReadoutError([[0.9, 0.1], [0.1, 0.9]])
-
-    # Assign to gates according to number of qubits
-    noise_model.add_all_qubit_quantum_error(depol_1, ['h', 'x'])
-    noise_model.add_all_qubit_quantum_error(depol_2, ['cx', 'cp'])
-    noise_model.add_all_qubit_quantum_error(depol_3, ['ccx'])
-
-    # Add measurement noise
-    noise_model.add_all_qubit_readout_error(readout_err)
-
+    p_depol = 0.01
+    p_readout = 0.02
+    noise_model.add_all_qubit_quantum_error(errors.depolarizing_error(p_depol, 1), ['u1', 'u2', 'u3', 'x', 'h'])
+    noise_model.add_all_qubit_readout_error(errors.readout_error.ReadoutError([[1 - p_readout, p_readout],
+                                                                                [p_readout, 1 - p_readout]]))
     return noise_model
 
 
-
-def shor_with_noise(a, N=15, t=8, shots=512, noisy=False):
+def shor_with_noise_generic(a, N, t=None, shots=256, noisy=True):
     if math.gcd(a, N) != 1:
-        print(f"gcd({a},{N}) != 1:", math.gcd(a, N))
-        return
-
-    qc = build_shor_circuit(a, N, t)
-
+        return None, None, None
+    qc, t_eff = build_shor_circuit_general(a, N, t)
     if noisy:
         noise_model = create_simple_noise_model()
-        sim = Aer.get_backend("aer_simulator_statevector")
+        sim = Aer.get_backend("aer_simulator")
         qc_t = transpile(qc, sim)
-        print("\n Running with noise model...")
         result = sim.run(qc_t, shots=shots, noise_model=noise_model).result()
     else:
         sim = Aer.get_backend("qasm_simulator")
         qc_t = transpile(qc, sim)
-        print("\n Running ideal (noiseless) simulation...")
         result = sim.run(qc_t, shots=shots).result()
-
     counts = result.get_counts()
+    factors = None
     for bitstring, count in counts.items():
-        meas_val = int(bitstring[::-1], 2)  # reverse bit order
-        r = try_order_from_measure(meas_val, t, a, N)
+        meas_val = int(bitstring, 2)
+        r = try_order_from_measure(meas_val, t_eff, a, N)
         if r is None:
             continue
-        factors = try_factors_from_r(a, r, N)
-        if factors:
-            p, q = factors
-            print(f"SUCCESS: {p} × {q} = {N}  (from {bitstring}, {count} shots)")
-            return counts
-    print("No non-trivial factors found.")
-    return counts
+        cand = try_factors_from_r(a, r, N)
+        if cand is not None:
+            factors = cand
+            break
+    return counts, factors, {"N": N, "a": a, "noisy": noisy}
+
+
+def plot_counts(counts, title="Noisy Shor measurement probabilities", filename="noisy_plot.png"):
+    if not counts:
+        return
+    total_shots = sum(counts.values())
+    probs = {state: c / total_shots for state, c in counts.items()}
+    sorted_items = sorted(probs.items(), key=lambda x: x[1], reverse=True)
+    states, pvals = zip(*sorted_items)
+    xs = [int(s, 2) for s in states]
+    plt.figure(figsize=(8, 4))
+    plt.bar(xs, pvals)
+    plt.xlabel("Measurement outcome (decimal)")
+    plt.ylabel("Probability")
+    plt.title(title)
+    plt.tight_layout()
+    plt.savefig(filename)
+    print(f"[plot] saved noisy plot to {os.path.abspath(filename)}")
+
+    
+
+
+def run_user_input_shor_with_noise():
+    while True:
+        try:
+            N = int(input("Enter composite N to factor with noise (e.g., 15, 21, 35, 143) (or 0 to quit): ").strip())
+        except ValueError:
+            print("invalid N")
+            continue
+        if N == 0:
+            return
+        if N <= 1:
+            print("N must be > 1")
+            continue
+        break
+
+    while True:
+        try:
+            a = int(input("Enter a (coprime to N, or 0 to re-enter N): ").strip())
+        except ValueError:
+            print("invalid a")
+            continue
+        if a == 0:
+            return run_user_input_shor_with_noise()
+        if math.gcd(a, N) != 1:
+            print(f"gcd(a, N) != 1 (got {math.gcd(a, N)}); choose a different a")
+            continue
+        break
+
+    noisy_str = input("Add noise? [y/n] (default y): ").strip().lower()
+    noisy = (noisy_str in ("", "y", "yes"))
+
+    counts, factors, info = shor_with_noise_generic(a, N, noisy=noisy)
+    print("N =", info["N"])
+    print("a =", info["a"])
+    print("noisy =", info["noisy"])
+    print("counts =", counts)
+    print("factors =", factors)
+    suffix = "noisy" if noisy else "ideal"
+    plot_counts(counts, title=f"Noisy Shor probabilities for N={N}, a={a}, noisy={noisy}", filename=f"noisy_plot_{suffix}.png")
 
 
 if __name__ == "__main__":
-    for a in [2, 7]:
-        print("\n" + "=" * 60)
-        print(f"Running Shor for N=15, a={a}")
-        print("\nIdeal simulation:")
-        shor_with_noise(a, N=15, t=8, shots=512, noisy=False)
-        print("\nNoisy simulation:")
-        shor_with_noise(a, N=15, t=8, shots=512, noisy=True)
-end_time1 = time.time()
-elapsed_time1 = end_time1 - start_time1
-
-
-# === (Thomas) Graphs Comparing Noise (Noisy Run) ===
-start_time2 = time.time()
-if __name__ == "__main__":  #only runs if above code executes correctly
-    a = 7  #the base value 'a' used in Shor's algorithm
-    buf = io.StringIO()
-
-    # Hide printed output like “Candidate period r = …”
-    with contextlib.redirect_stdout(buf):
-        counts = shor_with_noise(a=a, N=15, t=8, shots=1024, noisy=True)  #run the noisy simulation only
-
-    if counts:  #only plot if valid data
-        total_shots = sum(counts.values())  #compute total number of measurements
-        probabilities = {state: count / total_shots for state, count in counts.items()}  #convert counts to probabilities
-
-        N_show = 10  # choose how many of the most frequent results to show (usually 4–6 but 10 for safety)
-        #sort bitstrings by probability (highest first) and keep top N
-        top_probs = dict(sorted(probabilities.items(), key=lambda x: x[1], reverse=True)[:N_show])
-
-        plt.figure(figsize=(6, 4))  #create new window and set size
-        bars = plt.bar(top_probs.keys(), top_probs.values(), color='red')  #draw bar chart for noisy results
-        plt.title(f"Top Measurement Outcomes for a={a} (With Noise)")  #title showing noisy condition
-        plt.xlabel("Measured Bitstring")  #label horizontal axis
-        plt.ylabel("Probability")  #label vertical axis
-        plt.xticks(rotation=45)  #rotate x-axis labels for readability
-        plt.tight_layout()  #adjust layout so nothing overlaps
-
-        #loop through each bar and print its probability percentage above it
-        for bar, val in zip(bars, top_probs.values()):
-            plt.text(
-                bar.get_x() + bar.get_width() / 2,  #horizontally center text above bar
-                bar.get_height(),  #position text
-                f"{val * 100:.1f}%",  #show value as percentage
-                ha='center',
-                va='bottom',
-                fontsize=10,
-            )
-    plt.savefig("noisy_plot.png")
-    print("saved noisy_plot.png in", os.getcwd())
-       # plt.show()  #display chart
-end_time2 = time.time()
-elapsed_time2 = end_time2 - start_time2
-
-parts = ['Part 1', 'Part 2']
-times = [elapsed_time1, elapsed_time2]
-
-plt.figure(figsize=(6,4))
-bars = plt.bar(parts, times)
-
-plt.xlabel('Code Section')
-plt.ylabel('Elapsed Time (seconds)')
-plt.title('Benchmarking: Execution Time by Part')
-plt.grid(axis='y', linestyle='--', alpha=0.7)
-
-# Add text labels on each bar
-for bar, value in zip(bars, times):
-    plt.text(
-        bar.get_x() + bar.get_width() / 2,  # x position (center of bar)
-        value,                              # y position (top of bar)
-        f"{value:.3f}s",                    # label text (rounded to 3 decimals)
-        ha='center', va='bottom', fontsize=10, fontweight='bold'
-    )
-
-plt.savefig('02benchmark_timing.png')
-print("saved 02benchmark_timing.png in", os.getcwd())
+    run_user_input_shor_with_noise()
