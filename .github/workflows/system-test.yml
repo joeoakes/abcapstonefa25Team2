@@ -1,0 +1,38 @@
+name: System Environment Test
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  system-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install core dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install qiskit qiskit-aer qiskit-ibm-runtime pylatexenc matplotlib
+
+      - name: Install project dependencies if present
+        run: |
+          if [ -f "requirements.txt" ]; then
+             pip install -r requirements.txt
+          else
+             echo "No requirements.txt found — skipping"
+          fi
+
+      - name: Run the Shor simulation script (system test)
+        run: |
+          echo "Running 01-shor_noiseless_demo.py"
+          python "01-shor_noiseless_demo.py"
