@@ -41,14 +41,14 @@ jobs:
 
       - name: Run Shor noisy demo
         run: |
-          if [ -f "02-shor_noise_demo.py" ]; then
-            echo "Running 02-shor_noise_demo.py"
-            python "02-shor_noise_demo.py"
+          if [ -f "02-shor_with_noise_demo.py" ]; then
+            echo "Running 02-shor_with_noise_demo.py"
+            python "02-shor_with_noise_demo.py"
           fi
 
       - name: Run resource usage analysis
         run: |
-          if [ -f "03-resource_visualization.py" ]; then
+          if [ -f "03-resource_analysis.py" ]; then
             echo "Running 03-resource_visualization.py"
             python "03-resource_visualization.py"
           fi
