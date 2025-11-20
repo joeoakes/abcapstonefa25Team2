@@ -19,7 +19,7 @@ import numpy as np
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-
+plt.rcParams.update({'font.size':12})
 from qiskit import QuantumCircuit, ClassicalRegister, transpile
 from qiskit_aer import Aer
 from qiskit.circuit.library import UnitaryGate
@@ -169,20 +169,34 @@ def shor_factor_generic(a: int, N: int, t: int | None = None, shots: int = 256, 
 def plot_counts(counts, title="Shor measurement probabilities", filename="noiseless_plot.png"):
     if not counts:
         return
-    total_shots = sum(counts.values())
-    probs = {state: c / total_shots for state, c in counts.items()}
-    sorted_items = sorted(probs.items(), key=lambda x: x[1], reverse=True)
-    states, pvals = zip(*sorted_items)
-    xs = [int(s, 2) for s in states]
+    measured_states = list(counts.keys())
+    counts_list = list(counts.values())
+
     plt.figure(figsize=(8, 4))
-    plt.bar(xs, pvals)
-    plt.xlabel("Measurement outcome (decimal)")
-    plt.ylabel("Probability")
+    wcag_colors = ["#003366", "#054A29", "#7A0000", "#2E0057", "#004F4F", "#4A2900"]
+    bars = plt.bar(measured_states, counts_list, color=wcag_colors[:len(counts_list)])
+
     plt.title(title)
+    plt.xlabel("Measured Bitstring")
+    plt.ylabel("Shot Count")
+    plt.grid(axis='y', linestyle='--', alpha=0.6)
+
+    # Highlight dominant peak
+    max_count = max(counts_list)
+    peak_state = measured_states[counts_list.index(max_count)]
+    plt.text(
+        measured_states.index(peak_state),
+        max_count,
+        f"Peak: {peak_state} ({max_count} shots)",
+        ha='center',
+        va='bottom',
+        fontsize=10,
+        fontweight='bold',
+    )
+
     plt.tight_layout()
     plt.savefig(filename)
     print(f"[plot] saved noiseless plot to {os.path.abspath(filename)}")
-
 
 
 # Part 1: Interactive generic-N Shor run
@@ -275,7 +289,10 @@ def run_resource_analysis_for_last_N():
         w.writerow(["N", "a", "trial_index", "success", "time_seconds"])
         w.writerows(rows)
     print(f"[resource] wrote {out_name} with {len(rows)} rows (N={N})")
-
+    
+    if len(rows) == 0:
+        print(f"[resource] No results for N={N} — skipping resource plot.")
+        return
     # Simple success-rate plot per a
     success_by_a = {}
     total_by_a = {}
@@ -286,7 +303,7 @@ def run_resource_analysis_for_last_N():
     rates = [success_by_a[a] / total_by_a[a] for a in a_list]
 
     plt.figure(figsize=(6, 4))
-    plt.bar([str(a) for a in a_list], rates)
+    plt.bar([str(a) for a in a_list], rates, color="#003366", edgecolor="black")
     plt.xlabel("a")
     plt.ylabel("success rate")
     plt.title(f"Shor success rate per a for N={N}")
@@ -324,7 +341,7 @@ def run_depth_and_gatecount_analysis():
     # Simple bar chart: depth vs total gate count
     total_gates = sum(counts_ops.values())
     plt.figure(figsize=(6, 4))
-    plt.bar(["Depth", "Total Gates"], [depth, total_gates])
+    plt.bar(["Depth", "Total Gates"], [depth, total_gates], color="#003366", edgecolor="black")
     plt.ylabel("Count")
     plt.title(f"Circuit depth vs gate count for N={N}, a={a}")
     plt.tight_layout()
@@ -365,7 +382,8 @@ if __name__ == "__main__":
         times = [elapsed_time1, elapsed_time2, elapsed_time3]
 
         plt.figure(figsize=(8, 5))
-        bars = plt.bar(parts, times, color=["tab:blue", "tab:orange", "tab:green"])
+        wcag_colors = ["#003366", "#054A29", "#7A0000", "#2E0057", "#004F4F", "#4A2900"] 
+        bars = plt.bar(parts, times, color=wcag_colors[:len(times)], edgecolor="black")
         plt.xlabel("Part")
         plt.ylabel("Elapsed Time (seconds)")
         plt.title("Benchmarking: Execution Time by Part")
