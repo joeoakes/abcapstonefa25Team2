@@ -269,7 +269,7 @@ def run_default_noisy_benchmark():
 
     plt.xlabel('Code Section')
     plt.ylabel('Elapsed Time (seconds)')
-    plt.title('Noisy Shor Runtime Part 2')
+    plt.title('Noisy Shor Runtime Part 1 Only')
     plt.grid(axis='y', linestyle='--', alpha=0.7)
 
     for bar, value in zip(bars, times):
