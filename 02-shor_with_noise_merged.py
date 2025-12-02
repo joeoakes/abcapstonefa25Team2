@@ -164,11 +164,13 @@ def plot_counts(counts, title="Noisy Shor measurement probabilities", filename="
     probs = {state: c / total_shots for state, c in counts.items()}
     sorted_items = sorted(probs.items(), key=lambda x: x[1], reverse=True)
     states, pvals = zip(*sorted_items)
-    xs = [int(s, 2) for s in states]
+   # xs = [int(s, 2) for s in states]
     plt.figure(figsize=(8, 4))
-    plt.bar(xs, pvals)
-    plt.xlabel("Measurement outcome (decimal)")
+    wcag_colors = ["#003366", "#054A29", "#7A0000", "#2E0057", "#004F4F", "#4A2900"]
+    plt.bar(states, pvals, color=wcag_colors[:len(states)], edgecolor="black")
+    plt.xlabel("Measured Bitstring")
     plt.ylabel("Probability")
+    plt.xticks(rotation=45, ha="right")
     plt.title(title)
     plt.tight_layout()
     plt.savefig(filename)
@@ -259,15 +261,15 @@ def run_default_noisy_benchmark():
     elapsed_time2 = end_time2 - start_time2
 
     # Create benchmark timing bar chart
-    parts = ['Part 1', 'Part 2']
-    times = [elapsed_time1, elapsed_time2]
+    parts = ['Part 1']
+    times = [elapsed_time1]
 
     plt.figure(figsize=(6, 4))
     bars = plt.bar(parts, times)
 
     plt.xlabel('Code Section')
     plt.ylabel('Elapsed Time (seconds)')
-    plt.title('Benchmarking: Execution Time by Part')
+    plt.title('Noisy Shor Runtime Part 2')
     plt.grid(axis='y', linestyle='--', alpha=0.7)
 
     for bar, value in zip(bars, times):
