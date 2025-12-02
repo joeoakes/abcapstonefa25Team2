@@ -261,8 +261,8 @@ def run_default_noisy_benchmark():
     elapsed_time2 = end_time2 - start_time2
 
     # Create benchmark timing bar chart
-    parts = ['Part 1']
-    times = [elapsed_time1]
+    parts = ['Part 1', 'Part 2', 'Part 3']
+    times = [elapsed_time1, elapsed_time2, elapsed_time3]
 
     plt.figure(figsize=(6, 4))
     bars = plt.bar(parts, times)
