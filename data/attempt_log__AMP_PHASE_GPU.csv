@@ -1,0 +1,15 @@
+Attempt,Bitstring,Circuit Depth,Gate Count,Success,Time (s),Noise Label,Backend
+1,001001011111,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.02,_AMP_PHASE_GPU,GPU
+2,011111101010,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.05,_AMP_PHASE_GPU,GPU
+3,000011111011,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.07,_AMP_PHASE_GPU,GPU
+4,001010001101,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.09,_AMP_PHASE_GPU,GPU
+5,011000010011,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.11,_AMP_PHASE_GPU,GPU
+6,111100011010,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.13,_AMP_PHASE_GPU,GPU
+7,011110000000,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.15,_AMP_PHASE_GPU,GPU
+8,010111110011,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.18,_AMP_PHASE_GPU,GPU
+9,111101001101,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.20,_AMP_PHASE_GPU,GPU
+10,111100001110,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.22,_AMP_PHASE_GPU,GPU
+11,101111011110,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.24,_AMP_PHASE_GPU,GPU
+12,111000100111,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.30,_AMP_PHASE_GPU,GPU
+13,110101000101,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.32,_AMP_PHASE_GPU,GPU
+14,101001100100,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",True,0.34,_AMP_PHASE_GPU,GPU

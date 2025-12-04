@@ -1,0 +1,12 @@
+Attempt,Bitstring,Circuit Depth,Gate Count,Success,Time (s),Noise Label,Backend
+1,001001001110,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.02,DEP_AMP_CPU,CPU
+2,010011100011,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.05,DEP_AMP_CPU,CPU
+3,101010010001,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.07,DEP_AMP_CPU,CPU
+4,110000000111,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.09,DEP_AMP_CPU,CPU
+5,110100000110,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.16,DEP_AMP_CPU,CPU
+6,010011101001,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.18,DEP_AMP_CPU,CPU
+7,100000111110,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.21,DEP_AMP_CPU,CPU
+8,101100011100,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.23,DEP_AMP_CPU,CPU
+9,111011011110,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.25,DEP_AMP_CPU,CPU
+10,001101101001,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.27,DEP_AMP_CPU,CPU
+11,000011001100,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",True,0.30,DEP_AMP_CPU,CPU

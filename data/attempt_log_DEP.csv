@@ -1,0 +1,10 @@
+Attempt,Bitstring,Circuit Depth,Gate Count,Success,Time (s),Noise Label
+1,001000111110,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.02,DEP
+2,010010111111,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.04,DEP
+3,000001101110,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.06,DEP
+4,110111110000,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.08,DEP
+5,100000100000,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.10,DEP
+6,011100000010,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.12,DEP
+7,110000101110,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.14,DEP
+8,110011101010,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",False,0.16,DEP
+9,101001101000,36,"{'u3': 13, 'barrier': 12, 'measure': 12, 'reset': 12}",True,0.18,DEP
