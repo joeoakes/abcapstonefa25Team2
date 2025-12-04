@@ -103,6 +103,42 @@ def run_simulation_streaming(N, a):
 
     # 2. Build
     qc, t_eff = build_shor_circuit_semiclassical(a, N)
+
+    # Visualization (Marco)
+    def safe_visualize(circ, name, folder="qc_output"):
+        try:
+            os.makedirs(folder, exist_ok=True)
+            fig = circ.draw(output="mpl")
+            path = os.path.join(folder, name)
+            fig.savefig(path, dpi=200)
+            print(f"   [Viz] Saved: {path}")
+        except Exception as e:
+            print(f"   [Viz] Failed ({name}): {e}")
+
+    print("   [Viz] Generating circuit visualizations...")
+
+    # Raw circuit
+    safe_visualize(qc, "raw_circuit.png")
+
+    # Transpiled visualization
+    try:
+        sim_temp = AerSimulator(method='statevector')
+        target_basis = sim_temp.configuration().basis_gates + ['unitary']
+        qc_t_temp = transpile(qc, sim_temp, basis_gates=target_basis, optimization_level=0)
+        safe_visualize(qc_t_temp, "transpiled_circuit.png")
+    except Exception as e:
+        print(f"   [Viz] Skipped transpiled visualization: {e}")
+
+    # DAG
+    try:
+        from qiskit.visualization import dag_drawer
+        from qiskit.converters import circuit_to_dag
+        dag = circuit_to_dag(qc)
+        fig = dag_drawer(dag, output="mpl")
+        fig.savefig(os.path.join("qc_output", "circuit_dag.png"), dpi=200)
+        print("   [Viz] Saved: qc_output/circuit_dag.png")
+    except Exception as e:
+        print(f"   [Viz] Skipped DAG visualization: {e}")
     
     # 3. Simulator (Force GPU)
     sim = AerSimulator(method='statevector')
