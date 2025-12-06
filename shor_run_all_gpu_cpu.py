@@ -124,6 +124,35 @@ def run_all_noise_modes():
                     noise_model = get_noise_model(d, a_d, p)
                     sim = AerSimulator(method='automatic', device=device_type, noise_model=noise_model)
                     tqc = transpile(qc, sim)
+
+                    # ---------- brief visualization ----------
+
+                    # Create folder for snapshots (only once)
+                    snapshot_dir = "circuit_snapshots"
+                    os.makedirs(snapshot_dir, exist_ok=True)
+
+                    # Take a small slice of the transpiled circuit (show only first 12 gates):
+                    max_gates = 12
+                    try:
+                        small_qc = tqc.copy()
+                        # Drop all but first max_gates operations
+                        small_qc.data = small_qc.data[:max_gates]
+
+                        # Generate filename
+                        snapshot_file = os.path.join(
+                            snapshot_dir,
+                            f"snapshot_{label}_attempt{attempt}.png"
+                        )
+
+                        # Draw the miniature circuit
+                        small_qc.draw("mpl", filename=snapshot_file)
+
+                    except Exception as e:
+                        # Fails silently rather than break execution
+                        print(f"[SNAPSHOT WARNING] Could not generate circuit slice: {e}")
+
+                    # -----------------------------------------
+
                     depth = tqc.depth()
                     gates = dict(tqc.count_ops())
                     result = sim.run(tqc, shots=1).result()
