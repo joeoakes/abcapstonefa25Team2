@@ -125,10 +125,12 @@ def run_all_noise_modes():
                     sim = AerSimulator(method='automatic', device=device_type, noise_model=noise_model)
                     tqc = transpile(qc, sim)
 
+                    '''
+
                     # ---------- brief visualization ----------
 
                     # Create folder for snapshots (only once)
-                    snapshot_dir = "circuit_snapshots"
+                    snapshot_dir = "circuit_images"
                     os.makedirs(snapshot_dir, exist_ok=True)
 
                     # Take a small slice of the transpiled circuit (show only first 12 gates):
@@ -151,6 +153,7 @@ def run_all_noise_modes():
                         # Fails silently rather than break execution
                         print(f"[SNAPSHOT WARNING] Could not generate circuit slice: {e}")
 
+                    '''
                     # -----------------------------------------
 
                     depth = tqc.depth()
