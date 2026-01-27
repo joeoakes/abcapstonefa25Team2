@@ -5,17 +5,12 @@
 # Last Date Changed: 10/23/25
 
 # marco's shor's optimizations added 11/11/25
-#thomas's benchmark timing and depth and cate count graphing 
- # required dependancies
-#!pip install qiskit --quiet
-#!pip install qiskit_aer --quiet
-#!pip install qiskit_ibm_runtime --quiet
-#!pip install pylatexenc --quiet
 
 import math
 from fractions import Fraction
 from qiskit import QuantumCircuit, transpile, ClassicalRegister, QuantumRegister
 from qiskit_aer import Aer
+from qiskit_aer.noise import NoiseModel, errors  # <-- added for noise support
 
 from qiskit.circuit.library import QFT
 from qiskit.circuit.library.standard_gates import RCCXGate
@@ -28,13 +23,30 @@ import time
 import pylatexenc
 
 import csv, time
-from qiskit_aer import Aer
 from qiskit import transpile
 
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import io, contextlib
+
+
+# === GPU auto-detection helper ===
+# Auto targets gpu instead of cpu (if available)
+from qiskit_aer import AerSimulator
+
+def get_best_backend():
+    try:
+        # Try GPU-enabled simulator if available
+        gpu_backend = AerSimulator(method='statevector', device='GPU')
+        print("✅ Using GPU-accelerated AerSimulator")
+        return gpu_backend
+    except Exception as e:
+        # Fallback to standard CPU simulator
+        print("⚙️ GPU not available, using CPU simulator")
+        return Aer.get_backend("aer_simulator")
+        
+        
 
 # === PART 1 (Martin) --- Shor's Algorithm ===
 start_time1 = time.time()
@@ -141,6 +153,7 @@ def shor_factor_demo(a, N=15, t=8, shots=12, opt_level=3):
     qc = build_shor_circuit(a, N, t)
     sim = Aer.get_backend("qasm_simulator")
 
+
     pm = PassManager([Optimize1qGates(), CommutativeCancellation()])
 
     # run pass manager for early optimizations (1q merges, cancellations)
@@ -154,7 +167,6 @@ def shor_factor_demo(a, N=15, t=8, shots=12, opt_level=3):
         optimization_level=opt_level,
         layout_method="sabre",
         routing_method="sabre",
-        #basis_gates=["cx", "u3", "id"], # target ibmq-compatible gates
     )
 
     # --- Diagnostics ---
@@ -181,14 +193,6 @@ def shor_factor_demo(a, N=15, t=8, shots=12, opt_level=3):
     print("No non-trivial factors found.")
     return counts
     return counts
-
-# test run
-
-for a in [2, 7, 8, 11, 13, 4]:
-    print("\n" + "=" * 60)
-    print(f"Running Shor for N=15, a={a}")
-    shor_factor_demo(a=a, N=15, t=8, shots=12, opt_level=3)
-
 end_time1 = time.time()
 elapsed_time1 = end_time1 - start_time1
 # === PART 2 (Marco) --- Visualizing Ciruits ===
@@ -200,72 +204,17 @@ def visualize_partial_circuit(qc, num_ops=50):
     partial.append(instr, qargs, cargs)
   return partial.draw('mpl')
 
-# I provide a few types of visualization, we can choose from these as we see fit in the future
-
 qc = build_shor_circuit(a=7, N=15, t=8)
-
-# Only the first few layers (otherwise takes forever)
-
-# Print summary values
 print("Depth:", qc.depth())
 print("Width:", qc.width())
 print("Size:", qc.size())
 print(qc.count_ops())
-
-# Basic ascii circuit visualization of all circuits
-#print(qc)
-
-# Matplotlib circuit diagram
 visualize_partial_circuit(qc, num_ops=50)
-
 plt.close()
-# Collect Data
-# This cell runs existing Shor code many times and saves results to results.csv.
-
-# settings
-a_values = [2, 4, 7, 8, 11, 13]   # which bases to try
-trials_per_a = 20                  # how many trials per base
-shots_per_trial = 12               # shots each run
-N = 15                             # number to factor
-t = 8                              # counting precision
-
-rows = []  # Store each row per trial: [a, trial_index, success(0/1), runtime_s]
-
-sim = Aer.get_backend("qasm_simulator")
-
-for a in a_values:
-    for trial_idx in range(trials_per_a):
-        t0 = time.perf_counter()          # start a simple timer
-
-        # build + run using functions
-        qc = build_shor_circuit(a=a, N=N, t=t)                  # make the circuit
-        qc_t = transpile(qc, backend=sim, optimization_level=1) # make it compatible with backend
-        result = sim.run(qc_t, shots=shots_per_trial).result()  # execute
-        counts = result.get_counts()
-
-        success = 0
-        for bitstring, count in counts.items():
-            meas_val = int(bitstring, 2)
-            r = try_order_from_measure(meas_val, t, a, N)  # guess period r
-            if r is None:
-                continue
-            fac = try_factors_from_r(a, r, N)        # try to get factor from r
-            if fac is not None:
-                success = 1
-                break
-
-        dt = time.perf_counter() - t0               # how long the trial took
-        rows.append([a, trial_idx, success, dt])    # save one row
-
-with open("results.csv", "w", newline="") as f:
-    w = csv.writer(f)
-    w.writerow(["a", "trial_index", "success", "runtime_s"])
-    w.writerows(rows)                             # data row
-
-print("Wrote results.csv with", len(rows), "rows")
 end_time2 = time.time()
 elapsed_time2 = end_time2 - start_time2
-# === PART 3 (Thomas) Graphs Comparing Noise (Baseline)===
+
+# === PART 3 (Thomas/Marcos) Graphs Comparing Noise (Baseline)===
 
 start_time3 = time.time()
 if __name__ == "__main__": #only runs if above is running right
@@ -279,102 +228,94 @@ if __name__ == "__main__": #only runs if above is running right
     counts = result.get_counts()
     print("counts =", counts)
 
-
     trimmed_counts = {}
     for bitstring, count in counts.items():
-        bits = bitstring.replace(" ", "")  # remove spaces if any
-        trimmed = bits[-8:]                # keep the last 8 bits only
+        bits = bitstring.replace(" ", "")
+        trimmed = bits[-8:]
         trimmed_counts[trimmed] = trimmed_counts.get(trimmed, 0) + count
     counts = trimmed_counts
     print("trimmed counts =", counts)
-    if not counts:
-        import pandas as pd
-        df = pd.read_csv("results.csv")
-        success_counts = df.groupby("a")["success"].sum().to_dict()
-        counts = {f"a={k}": v for k, v in success_counts.items()}
-        print("Loaded counts from results.csv:", counts)
 
-    if counts:  #only plot if valid data
-        total_shots = sum(counts.values())#Compute the total number of measurements taken
-        probabilities = {state: count / total_shots for state, count in counts.items()}#Convert counts into probabilities (divide each count by total shots)
-
-        N_show = 10#Choose how many of the most frequent results to display on the chart(usally only shows 4-6 but 10 just in case)
-         #Sort bitstrings by probability (highest first) and keep only the top N \/
+    if counts:
+        total_shots = sum(counts.values())
+        probabilities = {state: count / total_shots for state, count in counts.items()}
+        N_show = 10
         top_probs = dict(sorted(probabilities.items(), key=lambda x: x[1], reverse=True)[:N_show])
 
-        plt.figure(figsize=(6,4))#Create a new window and set its size
-
-        bars = plt.bar(top_probs.keys(), top_probs.values(), color='blue')#Draw a bar chart of bitstring probabilities
-        plt.title(f"Top Measurement Outcomes for a={a} (No Noise)") #title indicating which base (a=7)(or whatever we use) and that it’s a no noise baseline measurement 
-        plt.xlabel("Measured Bitstring") #label horizontal axis
-        plt.ylabel("Probability") #label vertical axis
-        plt.xticks(rotation=45)#Rotate x-axis labels for readability
-        plt.tight_layout() #Automatically adjust layout so labels and title fit neatly
-
-        for bar, val in zip(bars, top_probs.values()):#Loop through each bar and print its probability percentage above the bar
-            plt.text(
-                bar.get_x() + bar.get_width()/2, #horizontally center text above bar
-                bar.get_height() + 0.01,#lace text slightly above bar height
-                f"{val*100:.1f}%",#show value as a percentage (1 decimal)
-                ha='center', va='bottom', fontsize=10#center alignment and font size
-            )
+        plt.figure(figsize=(6,4))
+        bars = plt.bar(top_probs.keys(), top_probs.values(), color='blue')
+        plt.title(f"Top Measurement Outcomes for a={a} (No Noise)")
+        plt.xlabel("Measured Bitstring")
+        plt.ylabel("Probability")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        for bar, val in zip(bars, top_probs.values()):
+            plt.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, f"{val*100:.1f}%", ha='center', va='bottom', fontsize=10)
     print("Figures available:", plt.get_fignums())
-    plt.savefig("noiseless_plot.png")#display chart
+    plt.savefig("noiseless_plot.png")
     print("saved noiseless_plot.png in", os.getcwd())
- 
+
+    # === Depolarizing Noise ===
+    noise_model = NoiseModel()
+    noise_model.add_all_qubit_quantum_error(errors.depolarizing_error(0.02, 1), ['x', 'h', 'u3'])
+    noise_model.add_all_qubit_quantum_error(errors.depolarizing_error(0.04, 2), ['cx'])
+
+    noisy_backend = AerSimulator(method='density_matrix', device='GPU')
+    tqc_noisy = transpile(qc, noisy_backend)
+    result_noisy = noisy_backend.run(tqc_noisy, shots=2048, noise_model=noise_model).result()
+    dep_counts = result_noisy.get_counts()
+    plt.figure(figsize=(6,4))
+    plt.bar(dep_counts.keys(), [v/sum(dep_counts.values()) for v in dep_counts.values()], color='red')
+    plt.title("Measurement Outcomes with Depolarizing Noise")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig("depolarizing_plot.png")
+    print("saved depolarizing_plot.png in", os.getcwd())
+
+    # === Amplitude Damping Noise ===
+    amp_noise = NoiseModel()
+    amp_noise.add_all_qubit_quantum_error(errors.amplitude_damping_error(0.05), ['x', 'h', 'u3'])
+    two_qubit_amp_error = errors.amplitude_damping_error(0.1).tensor(errors.amplitude_damping_error(0.1))
+    amp_noise.add_all_qubit_quantum_error(two_qubit_amp_error, ['cx'])
+
+    result_amp = noisy_backend.run(tqc_noisy, shots=2048, noise_model=amp_noise).result()
+    amp_counts = result_amp.get_counts()
+    plt.figure(figsize=(6,4))
+    plt.bar(amp_counts.keys(), [v/sum(amp_counts.values()) for v in amp_counts.values()], color='orange')
+    plt.title("Measurement Outcomes with Amplitude Damping Noise")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig("amplitude_plot.png")
+    print("saved amplitude_plot.png in", os.getcwd())
+
+    # === Phase Damping Noise ===
+    phase_noise = NoiseModel()
+    phase_noise.add_all_qubit_quantum_error(errors.phase_damping_error(0.05), ['x', 'h', 'u3'])
+    two_qubit_phase_error = errors.phase_damping_error(0.1).tensor(errors.phase_damping_error(0.1))
+    phase_noise.add_all_qubit_quantum_error(two_qubit_phase_error, ['cx'])
+
+    result_phase = noisy_backend.run(tqc_noisy, shots=2048, noise_model=phase_noise).result()
+    phase_counts = result_phase.get_counts()
+    plt.figure(figsize=(6,4))
+    plt.bar(phase_counts.keys(), [v/sum(phase_counts.values()) for v in phase_counts.values()], color='green')
+    plt.title("Measurement Outcomes with Phase Damping Noise")
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig("phase_plot.png")
+    print("saved phase_plot.png in", os.getcwd())
+
 end_time3 = time.time()
 elapsed_time3 = end_time3 - start_time3
-parts = ['Part 1', 'Part 2', 'Part 3']
-times = [elapsed_time1, elapsed_time2, elapsed_time3]
-
-# Create a bar chart
-parts = ['Part 1','Part 2', 'Part 3']
-times = [elapsed_time1, elapsed_time2, elapsed_time3]
+parts = ['Part 2', 'Part 3']
+times = [elapsed_time2, elapsed_time3]
 
 plt.figure(figsize=(6,4))
 bars = plt.bar(parts, times)
-
 plt.xlabel('Code Section')
 plt.ylabel('Elapsed Time (seconds)')
 plt.title('Benchmarking: Execution Time by Part')
 plt.grid(axis='y', linestyle='--', alpha=0.7)
-
-# Add text labels on each bar
 for bar, value in zip(bars, times):
-    plt.text(
-        bar.get_x() + bar.get_width() / 2,  # x position (center of bar)
-        value,                              # y position (top of bar)
-        f"{value:.3f}s",                    # label text (rounded to 3 decimals)
-        ha='center', va='bottom', fontsize=10, fontweight='bold'
-    )
-
+    plt.text(bar.get_x() + bar.get_width() / 2, value, f"{value:.3f}s", ha='center', va='bottom', fontsize=10, fontweight='bold')
 plt.savefig('benchmark_timing.png')
 print("saved benchmark_timing.png in", os.getcwd())
-
-qc_test = build_shor_circuit(a=7, N=15, t=8)
-sim = Aer.get_backend("qasm_simulator")
-qc_t = transpile(qc_test, backend=sim, optimization_level=3)
-
-depth = qc_t.depth()
-gate_count = sum(qc_t.count_ops().values())
-
-plt.figure(figsize=(5,4))
-metrics = ['Depth', 'Gate Count']
-values = [depth, gate_count]
-bars = plt.bar(metrics, values)
-
-plt.xlabel('Metric')
-plt.ylabel('Count')
-plt.title('Quantum Circuit Complexity (Depth vs Gate Count)')
-plt.grid(axis='y', linestyle='--', alpha=0.7)
-
-for bar, val in zip(bars, values):
-    plt.text(
-        bar.get_x() + bar.get_width()/2,
-        val,
-        f"{val}",
-        ha='center', va='bottom', fontsize=10, fontweight='bold'
-    )
-plt.tight_layout()
-plt.savefig('depth_gatecount.png')
-print(f"Saved depth_gatecount.png (Depth={depth}, Total Gates={gate_count})")
